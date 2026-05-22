@@ -1,5 +1,11 @@
+"""
+Composite Simpson's 1/3 Rule – Flask Web Application
+PIT Project – Numerical Methods Online Calculator
+"""
+
 from flask import Flask, render_template, request, jsonify
 import math
+import os
 
 app = Flask(__name__)
 
@@ -27,10 +33,6 @@ def safe_eval(expr: str, x: float) -> float:
 
 
 def composite_simpsons(f_expr: str, a: float, b: float, n: int):
-    """
-    Composite Simpson's 1/3 Rule.
-    n must be even. Returns (result, steps_list).
-    """
     if n % 2 != 0:
         raise ValueError("n must be even for Composite Simpson's 1/3 Rule.")
     if n < 2:
@@ -40,7 +42,6 @@ def composite_simpsons(f_expr: str, a: float, b: float, n: int):
     x_vals = [a + i * h for i in range(n + 1)]
     f_vals = [safe_eval(f_expr, x) for x in x_vals]
 
-    # Build step-by-step data
     steps = []
     for i, (xi, fi) in enumerate(zip(x_vals, f_vals)):
         if i == 0 or i == n:
@@ -76,16 +77,19 @@ def composite_simpsons(f_expr: str, a: float, b: float, n: int):
     }
 
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def index():
     return render_template("index.html")
 
 
 @app.route("/calculate", methods=["POST"])
 def calculate():
-    data = request.get_json()
     try:
-        f_expr = data.get("f_expr", "").strip()
+        data = request.get_json(force=True, silent=True)
+        if data is None:
+            return jsonify({"success": False, "error": "Invalid JSON body."})
+
+        f_expr = str(data.get("f_expr", "")).strip()
         a = float(data["a"])
         b = float(data["b"])
         n = int(data["n"])
@@ -97,9 +101,10 @@ def calculate():
 
         result = composite_simpsons(f_expr, a, b, n)
         return jsonify({"success": True, "data": result})
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)
