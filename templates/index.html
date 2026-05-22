@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Composite Simpson's 1/3 Rule — Numerical Methods</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [["\\(","\\)"],["$","$"]], displayMath: [["\\[","\\]"],["$$","$$"]] },
+      options: { skipHtmlTags: ["script","noscript","style","textarea","pre"] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+  <style>
+    :root {
+      --blue-900: #0a1628;
+      --blue-800: #0f2347;
+      --blue-700: #1a3a6e;
+      --blue-600: #1e4d9b;
+      --blue-500: #2563c8;
+      --blue-400: #4a83e0;
+      --blue-300: #7ea8ee;
+      --blue-200: #bdd3f8;
+      --blue-100: #ddeafd;
+      --blue-50:  #f0f6ff;
+      --white:    #ffffff;
+      --gray-50:  #f8fafc;
+      --gray-100: #f0f4f9;
+      --gray-200: #e2eaf4;
+      --gray-300: #c8d8ee;
+      --gray-500: #6b85a8;
+      --gray-700: #334e6e;
+      --ink:      #0d1f38;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    /* ── BREADCRUMB ── */
+    .breadcrumb {
+      background: var(--blue-900);
+      padding: 0.6rem 2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      color: var(--blue-300);
+    }
+    .breadcrumb span { color: var(--blue-500); margin: 0 0.4rem; }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 1px 8px rgba(37,99,200,0.07);
+    }
+    nav a {
+      display: block;
+      padding: 0.95rem 2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-500);
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    nav a:hover { color: var(--blue-600); }
+    nav a.active { color: var(--blue-600); border-bottom-color: var(--blue-500); }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--blue-900);
+      color: var(--white);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(37,99,200,0.35) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 80% at 80% 30%, rgba(30,77,155,0.3) 0%, transparent 70%);
+    }
+    .hero::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 59px,
+        rgba(255,255,255,0.025) 59px, rgba(255,255,255,0.025) 60px
+      ),
+      repeating-linear-gradient(
+        90deg, transparent, transparent 59px,
+        rgba(255,255,255,0.025) 59px, rgba(255,255,255,0.025) 60px
+      );
+    }
+    .hero-inner { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blue-300);
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      line-height: 1.1;
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+    .hero h1 em {
+      font-style: italic;
+      color: var(--blue-300);
+    }
+    .hero-sub {
+      color: rgba(255,255,255,0.55);
+      font-size: 1rem;
+      font-weight: 300;
+      margin-bottom: 2rem;
+    }
+
+    /* formula pill */
+    .hero-formula {
+      display: inline-block;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 1rem 2rem;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(4px);
+    }
+    .hero-formula .MathJax, .hero-formula .mjx-chtml { color: var(--white) !important; }
+
+    /* tags */
+    .tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem; }
+    .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border-radius: 100px;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* hero buttons */
+    .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      background: var(--blue-500);
+      color: #fff;
+      border: none;
+      padding: 0.8rem 1.8rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, transform .1s;
+    }
+    .btn-primary:hover { background: var(--blue-600); }
+    .btn-outline {
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 0.8rem 1.8rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,0.08); }
+
+    .scroll-hint {
+      margin-top: 2.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .scroll-hint::before { content: "↓  "; }
+
+    /* ── MAIN LAYOUT ── */
+    main { max-width: 880px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+
+    section { margin-bottom: 5rem; scroll-margin-top: 68px; }
+
+    /* section number label */
+    .sec-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blue-400);
+      margin-bottom: 0.4rem;
+    }
+    h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2rem;
+      font-weight: 400;
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+    }
+    h3 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--blue-700);
+      margin: 2rem 0 0.7rem;
+    }
+    p { margin-bottom: 1rem; color: var(--gray-700); }
+
+    /* ── FORMULA BOX ── */
+    .formula-box {
+      background: var(--blue-50);
+      border: 1px solid var(--blue-200);
+      border-left: 4px solid var(--blue-500);
+      border-radius: 0 8px 8px 0;
+      padding: 1.4rem 1.8rem;
+      margin: 1.4rem 0;
+    }
+    .formula-box .flabel {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--blue-500);
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── INFO CHIPS ── */
+    .chip-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.2rem 0; }
+    .chip {
+      background: var(--blue-50);
+      border: 1px solid var(--blue-200);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      flex: 1;
+      min-width: 160px;
+    }
+    .chip .cl { font-family: 'DM Mono', monospace; font-size: 0.63rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-500); margin-bottom: 0.2rem; }
+    .chip .cv { font-weight: 600; color: var(--ink); font-size: 0.95rem; }
+    .chip.c4 .cv { color: var(--blue-600); }
+    .chip.c2 .cv { color: #0e7490; }
+    .chip.c1 .cv { color: #16803a; }
+
+    /* ── ALGORITHM STEPS ── */
+    .algo-steps { counter-reset: step; list-style: none; margin: 1.2rem 0; }
+    .algo-steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 0.8rem;
+      padding: 0.8rem 1rem;
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+    }
+    .algo-steps li::before {
+      content: counter(step);
+      min-width: 28px; height: 28px;
+      background: var(--blue-600);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .comp-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 1rem 0; }
+    .comp-table th {
+      background: var(--blue-800);
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.65rem 1rem;
+      text-align: left;
+    }
+    .comp-table td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--gray-200); }
+    .comp-table tr:nth-child(even) td { background: var(--blue-50); }
+    .comp-table td:first-child { font-weight: 600; color: var(--ink); }
+
+    /* ── WORKED EXAMPLES ── */
+    .ex-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 2px 12px rgba(37,99,200,0.06);
+    }
+    .ex-header {
+      background: var(--blue-700);
+      color: var(--white);
+      padding: 1.2rem 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .ex-num {
+      background: rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .ex-title { font-family: 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 400; }
+    .ex-body { padding: 1.8rem; }
+
+    .step-card {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 1.2rem 1.4rem;
+      margin: 1rem 0;
+    }
+    .step-card h4 {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blue-500);
+      margin-bottom: 0.6rem;
+    }
+    .step-card p { margin-bottom: 0.4rem; }
+
+    /* data table inside examples */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.8rem; overflow: hidden; border-radius: 8px; border: 1px solid var(--gray-200); }
+    .data-table th { background: var(--blue-900); color: var(--white); font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.6rem 0.9rem; text-align: center; }
+    .data-table td { padding: 0.5rem 0.9rem; text-align: center; border-bottom: 1px solid var(--gray-200); font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+    .data-table tr:nth-child(even) td { background: var(--blue-50); }
+    .coeff-4 { color: var(--blue-600); font-weight: 700; }
+    .coeff-2 { color: #0e7490; font-weight: 700; }
+    .coeff-1 { color: #16803a; font-weight: 700; }
+
+    .result-bar {
+      background: var(--blue-600);
+      color: #fff;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-top: 1.2rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.9;
+    }
+    .result-bar .rb-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.7; }
+
+    /* ── CALCULATOR ── */
+    .calc-wrap {
+      background: var(--blue-900);
+      border-radius: 14px;
+      padding: 2.5rem;
+      color: var(--white);
+      position: relative;
+      overflow: hidden;
+    }
+    .calc-wrap::before {
+      content: "";
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, var(--blue-600) 0%, transparent 70%);
+      opacity: 0.2;
+    }
+    .calc-wrap h2 { color: var(--white); position: relative; }
+    .calc-wrap .sec-num { color: var(--blue-300); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-bottom: 1.5rem; position: relative; }
+    .fg-wide { grid-column: 1 / -1; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+    input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 6px;
+      padding: 0.7rem 1rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--white);
+      outline: none;
+      transition: border-color .2s, background .2s;
+    }
+    input:focus { border-color: var(--blue-400); background: rgba(255,255,255,0.1); }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+    .hint { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: rgba(255,255,255,0.35); margin-top: 0.25rem; }
+
+    .btn-run {
+      background: var(--blue-500);
+      color: #fff;
+      border: none;
+      padding: 0.9rem 2.2rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      margin-right: 0.8rem;
+    }
+    .btn-run:hover { background: var(--blue-400); }
+    .btn-run:active { transform: scale(0.98); }
+    .btn-reset {
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 0.9rem 1.5rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-reset:hover { background: rgba(255,255,255,0.06); }
+
+    #error-msg {
+      background: rgba(220,50,50,0.15);
+      border: 1px solid rgba(220,50,50,0.35);
+      border-radius: 6px;
+      padding: 0.8rem 1rem;
+      color: #fca5a5;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.82rem;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    /* output */
+    #output { margin-top: 2rem; display: none; }
+
+    .out-result {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .out-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 1.1rem 1.4rem;
+    }
+    .out-box .ob-label { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 0.3rem; }
+    .out-box .ob-val { font-family: 'DM Serif Display', serif; font-size: 1.6rem; color: var(--white); }
+    .out-box.highlight { background: var(--blue-600); border-color: var(--blue-400); }
+
+    .out-formula {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 1rem 1.4rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 2;
+      margin-bottom: 1.5rem;
+      color: rgba(255,255,255,0.75);
+    }
+    .out-formula span { color: var(--blue-300); }
+
+    .out-table-wrap { overflow-x: auto; }
+    .out-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.77rem;
+      min-width: 480px;
+    }
+    .out-table th {
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.6);
+      padding: 0.55rem 0.9rem;
+      text-align: center;
+      font-size: 0.64rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .out-table td { padding: 0.45rem 0.9rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .out-table .oc4 { color: #93c5fd; font-weight: 600; }
+    .out-table .oc2 { color: #67e8f9; font-weight: 600; }
+    .out-table .oc1 { color: #86efac; font-weight: 600; }
+
+    .btn-csv {
+      margin-top: 1.2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.65);
+      padding: 0.55rem 1.2rem;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-csv:hover { background: rgba(255,255,255,0.07); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--blue-900);
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      padding: 1.8rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .out-result { grid-template-columns: 1fr; }
+      nav a { padding: 0.75rem 0.9rem; font-size: 0.65rem; }
+      .calc-wrap { padding: 1.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="breadcrumb">HOME <span>/</span> COMPOSITE SIMPSON'S 1/3 RULE</div>
+
+  <nav>
+    <a href="#discussion">Discussion</a>
+    <a href="#examples">Examples</a>
+    <a href="#calculator">Calculator</a>
+  </nav>
+
+  <!-- ═══ HERO ═══ -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Numerical Methods · PIT · Numerical Integration</div>
+      <h1>Composite <em>Simpson's</em><br/>1/3 Rule</h1>
+      <p class="hero-sub">Piecewise parabolic integration — fourth-order accuracy with a simple coefficient pattern.</p>
+
+      <div class="hero-formula">
+        $$I \approx \frac{h}{3}\Bigl[f(x_0) + 4\!\sum_{\text{odd}} f(x_i) + 2\!\sum_{\text{even}} f(x_i) + f(x_n)\Bigr]$$
+      </div>
+
+      <div class="tags">
+        <span class="tag">Order 4</span>
+        <span class="tag">Even n Required</span>
+        <span class="tag">Definite Integrals</span>
+        <span class="tag">1–2–4 Pattern</span>
+      </div>
+
+      <div class="hero-btns">
+        <a href="#discussion" class="btn-primary">Discuss Method</a>
+        <a href="#calculator" class="btn-outline">Open Calculator</a>
+      </div>
+
+      <div class="scroll-hint">scroll to explore</div>
+    </div>
+  </div>
+
+  <!-- ═══ MAIN ═══ -->
+  <main>
+
+    <!-- ─── DISCUSSION ─── -->
+    <section id="discussion">
+      <div class="sec-num">01 — Mathematical Discussion</div>
+      <h2>Theory &amp; Derivation</h2>
+
+      <p>
+        Numerical integration estimates \(\displaystyle\int_a^b f(x)\,dx\) when an
+        analytical antiderivative is unavailable or impractical.
+        The <strong>Composite Simpson's 1/3 Rule</strong> subdivides the interval
+        into \(n\) equal parts (n must be even) and fits a quadratic (parabolic)
+        polynomial through every consecutive triple of nodes, summing the exact
+        areas under each parabola.
+      </p>
+
+      <h3>From Basic to Composite</h3>
+      <p>
+        For a single sub-interval \([a,b]\) with midpoint \(m\) and
+        half-width \(h = (b-a)/2\), integrating the Lagrange quadratic
+        interpolant through \(f(a)\), \(f(m)\), \(f(b)\) gives the basic rule:
+      </p>
+      <div class="formula-box">
+        <div class="flabel">Basic Simpson's 1/3</div>
+        $$\int_a^b f(x)\,dx \approx \frac{h}{3}\bigl[f(a) + 4f(m) + f(b)\bigr]$$
+      </div>
+
+      <p>
+        Applying this over \(n/2\) consecutive pairs of sub-intervals of width
+        \(h = (b-a)/n\) and collecting like terms yields:
+      </p>
+      <div class="formula-box">
+        <div class="flabel">Composite Simpson's 1/3 Rule</div>
+        $$\int_a^b f(x)\,dx \approx \frac{h}{3}\Bigl[
+          f(x_0)
+          + 4\!\sum_{\substack{i=1,3,5,\ldots}}^{n-1} f(x_i)
+          + 2\!\sum_{\substack{i=2,4,6,\ldots}}^{n-2} f(x_i)
+          + f(x_n)
+        \Bigr]$$
+        <p style="margin-top:.6rem;font-size:.85rem;color:var(--gray-500);">
+          where \(\;h = (b-a)/n\;\) and \(\;x_i = a + ih\)
+        </p>
+      </div>
+
+      <h3>Coefficient Pattern</h3>
+      <div class="chip-row">
+        <div class="chip c1"><div class="cl">Endpoints (i = 0, n)</div><div class="cv">Coefficient = 1</div></div>
+        <div class="chip c4"><div class="cl">Odd indices (i = 1, 3, 5, …)</div><div class="cv">Coefficient = 4</div></div>
+        <div class="chip c2"><div class="cl">Even interior (i = 2, 4, 6, …)</div><div class="cv">Coefficient = 2</div></div>
+      </div>
+      <p>Mnemonically, the weights follow the pattern <strong>1 – 4 – 2 – 4 – 2 – … – 4 – 1</strong>.</p>
+
+      <h3>Algorithm Steps</h3>
+      <ol class="algo-steps">
+        <li>Choose an <strong>even</strong> integer \(n \geq 2\) and compute \(h = (b-a)/n\).</li>
+        <li>Generate nodes \(x_i = a + ih\) for \(i = 0, 1, \ldots, n\).</li>
+        <li>Evaluate \(f(x_i)\) at every node.</li>
+        <li>Multiply each \(f(x_i)\) by its coefficient (1, 4, or 2).</li>
+        <li>Sum all weighted values, multiply by \(h/3\) — that is the integral approximation.</li>
+      </ol>
+
+      <h3>Error Analysis</h3>
+      <div class="formula-box">
+        <div class="flabel">Global Truncation Error</div>
+        $$E \;=\; -\frac{(b-a)\,h^4}{180}\,f^{(4)}(\xi), \qquad \xi \in (a, b)$$
+      </div>
+      <p>
+        The method is <strong>fourth-order accurate</strong>: halving \(h\) (doubling \(n\))
+        reduces the error by \(2^4 = 16\times\). It integrates polynomials of degree ≤ 3 exactly.
+      </p>
+
+      <h3>Comparison with Related Methods</h3>
+      <table class="comp-table">
+        <thead>
+          <tr><th>Property</th><th>Trapezoidal</th><th>Simpson's 1/3</th><th>Simpson's 3/8</th><th>Boole's</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Polynomial fit</td><td>Linear</td><td>Quadratic</td><td>Cubic</td><td>Quartic</td></tr>
+          <tr><td>Order of accuracy</td><td>2nd</td><td>4th</td><td>4th</td><td>6th</td></tr>
+          <tr><td>n requirement</td><td>Any</td><td>Even</td><td>Multiple of 3</td><td>Multiple of 4</td></tr>
+          <tr><td>Points per segment</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ─── EXAMPLES ─── -->
+    <section id="examples">
+      <div class="sec-num">02 — Worked Examples</div>
+      <h2>Step-by-Step Solutions</h2>
+
+      <!-- Example 1 -->
+      <div class="ex-card">
+        <div class="ex-header">
+          <span class="ex-num">Example 1</span>
+          <span class="ex-title">Integrating \(f(x) = x^4\) on \([0,\,2]\) with \(n = 4\)</span>
+        </div>
+        <div class="ex-body">
+          <p><strong>Exact value:</strong> \(\displaystyle\int_0^2 x^4\,dx = \left[\tfrac{x^5}{5}\right]_0^2 = \tfrac{32}{5} = 6.4\)</p>
+
+          <div class="step-card">
+            <h4>Step 1 — Compute h and the nodes</h4>
+            <p>$$h = \frac{b-a}{n} = \frac{2-0}{4} = 0.5$$</p>
+            <p>Nodes: \(x_0 = 0,\quad x_1 = 0.5,\quad x_2 = 1.0,\quad x_3 = 1.5,\quad x_4 = 2.0\)</p>
+          </div>
+
+          <div class="step-card">
+            <h4>Step 2 — Evaluate f(x) = x⁴ and assign coefficients</h4>
+            <table class="data-table">
+              <thead><tr><th>i</th><th>xᵢ</th><th>f(xᵢ) = xᵢ⁴</th><th>Coefficient</th><th>Weighted</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>0.0</td><td>0.0000</td><td class="coeff-1">1</td><td>0.0000</td></tr>
+                <tr><td>1</td><td>0.5</td><td>0.0625</td><td class="coeff-4">4</td><td>0.2500</td></tr>
+                <tr><td>2</td><td>1.0</td><td>1.0000</td><td class="coeff-2">2</td><td>2.0000</td></tr>
+                <tr><td>3</td><td>1.5</td><td>5.0625</td><td class="coeff-4">4</td><td>20.2500</td></tr>
+                <tr><td>4</td><td>2.0</td><td>16.0000</td><td class="coeff-1">1</td><td>16.0000</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="step-card">
+            <h4>Step 3 — Apply the formula</h4>
+            <p>$$\text{Sum} = 0.0000 + 0.2500 + 2.0000 + 20.2500 + 16.0000 = 38.5000$$</p>
+            <p>$$I \approx \frac{h}{3} \times \text{Sum} = \frac{0.5}{3} \times 38.5 = \frac{19.25}{3} \approx 6.4167$$</p>
+          </div>
+
+          <div class="result-bar">
+            <div class="rb-label">Result</div>
+            Simpson's ≈ <strong>6.41667</strong> &emsp;|&emsp; Exact = 6.40000 &emsp;|&emsp; Relative Error ≈ <strong>0.26%</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Example 2 -->
+      <div class="ex-card">
+        <div class="ex-header">
+          <span class="ex-num">Example 2</span>
+          <span class="ex-title">Integrating \(f(x) = e^x\) on \([0,\,1]\) with \(n = 6\)</span>
+        </div>
+        <div class="ex-body">
+          <p><strong>Exact value:</strong> \(\displaystyle\int_0^1 e^x\,dx = e - 1 \approx 1.71828\)</p>
+
+          <div class="step-card">
+            <h4>Step 1 — Compute h and the nodes</h4>
+            <p>$$h = \frac{1-0}{6} = 0.1\overline{6}$$</p>
+            <p>Nodes: \(x_0=0,\; x_1\approx0.1667,\; x_2\approx0.3333,\; x_3=0.5,\; x_4\approx0.6667,\; x_5\approx0.8333,\; x_6=1.0\)</p>
+          </div>
+
+          <div class="step-card">
+            <h4>Step 2 — Evaluate f(x) = eˣ and assign coefficients</h4>
+            <table class="data-table">
+              <thead><tr><th>i</th><th>xᵢ</th><th>f(xᵢ) = eˣⁱ</th><th>Coefficient</th><th>Weighted</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>0.0000</td><td>1.000000</td><td class="coeff-1">1</td><td>1.000000</td></tr>
+                <tr><td>1</td><td>0.1667</td><td>1.181360</td><td class="coeff-4">4</td><td>4.725440</td></tr>
+                <tr><td>2</td><td>0.3333</td><td>1.395612</td><td class="coeff-2">2</td><td>2.791224</td></tr>
+                <tr><td>3</td><td>0.5000</td><td>1.648721</td><td class="coeff-4">4</td><td>6.594884</td></tr>
+                <tr><td>4</td><td>0.6667</td><td>1.947734</td><td class="coeff-2">2</td><td>3.895468</td></tr>
+                <tr><td>5</td><td>0.8333</td><td>2.300780</td><td class="coeff-4">4</td><td>9.203120</td></tr>
+                <tr><td>6</td><td>1.0000</td><td>2.718282</td><td class="coeff-1">1</td><td>2.718282</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="step-card">
+            <h4>Step 3 — Apply the formula</h4>
+            <p>$$\text{Sum} = 1.000000 + 4.725440 + 2.791224 + 6.594884 + 3.895468 + 9.203120 + 2.718282 = 30.928418$$</p>
+            <p>$$I \approx \frac{0.1\overline{6}}{3} \times 30.928418 = 0.05\overline{5} \times 30.928418 \approx 1.718268$$</p>
+          </div>
+
+          <div class="result-bar">
+            <div class="rb-label">Result</div>
+            Simpson's ≈ <strong>1.718268</strong> &emsp;|&emsp; Exact = 1.718282 &emsp;|&emsp; Relative Error ≈ <strong>0.00082%</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── CALCULATOR ─── -->
+    <section id="calculator">
+      <div class="calc-wrap">
+        <div class="sec-num">03 — Interactive Calculator</div>
+        <h2>Try It Yourself</h2>
+        <p style="color:rgba(255,255,255,0.55);margin-bottom:2rem;">
+          Enter any integrand \(f(x)\), bounds, and an even \(n\). Use <code style="background:rgba(255,255,255,0.1);padding:.1rem .4rem;border-radius:3px;">x</code> as the variable and standard math functions.
+        </p>
+
+        <div class="form-grid">
+          <div class="form-group fg-wide">
+            <label>f(x) — integrand expression</label>
+            <input type="text" id="f_expr" value="sin(x)" placeholder="e.g. sin(x)  |  x**4  |  exp(x)*cos(x)"/>
+            <div class="hint">Ops: +, −, *, /, ** &nbsp;|&nbsp; Functions: sin, cos, tan, exp, log, log10, sqrt, abs, pi, e</div>
+          </div>
+          <div class="form-group">
+            <label>a — lower bound</label>
+            <input type="number" id="a_val" value="0" step="any"/>
+          </div>
+          <div class="form-group">
+            <label>b — upper bound</label>
+            <input type="number" id="b_val" value="3.14159265358979" step="any"/>
+          </div>
+          <div class="form-group">
+            <label>n — subintervals (must be even)</label>
+            <input type="number" id="n_val" value="10" min="2" step="2"/>
+            <div class="hint">Minimum 2, even integers only</div>
+          </div>
+        </div>
+
+        <button class="btn-run" onclick="calculate()">▶ &nbsp;Run Simpson's 1/3</button>
+        <button class="btn-reset" onclick="resetCalc()">Reset</button>
+
+        <div id="error-msg"></div>
+
+        <div id="output">
+          <div class="out-result">
+            <div class="out-box highlight">
+              <div class="ob-label">Approximate Integral</div>
+              <div class="ob-val" id="res-val">—</div>
+            </div>
+            <div class="out-box">
+              <div class="ob-label">Step Size h</div>
+              <div class="ob-val" id="res-h">—</div>
+            </div>
+          </div>
+
+          <div class="out-formula" id="res-formula"></div>
+
+          <div class="out-table-wrap">
+            <table class="out-table">
+              <thead>
+                <tr>
+                  <th>Step i</th>
+                  <th>xᵢ</th>
+                  <th>f(xᵢ)</th>
+                  <th>Coeff</th>
+                  <th>Coeff × f(xᵢ)</th>
+                </tr>
+              </thead>
+              <tbody id="res-tbody"></tbody>
+            </table>
+          </div>
+
+          <button class="btn-csv" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Composite Simpson's 1/3 Rule · Numerical Methods Online Calculator · PIT Project
+  </footer>
+
+  <script>
+    // ── Nav active on scroll ──────────────────────────────────────────────
+    const secs = document.querySelectorAll("section[id]");
+    const links = document.querySelectorAll("nav a");
+    window.addEventListener("scroll", () => {
+      let cur = "";
+      secs.forEach(s => { if (window.scrollY >= s.offsetTop - 90) cur = s.id; });
+      links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + cur));
+    });
+
+    // ── Calculator ────────────────────────────────────────────────────────
+    let lastData = null;
+
+    async function calculate() {
+      const errBox = document.getElementById("error-msg");
+      const output = document.getElementById("output");
+      errBox.style.display = "none";
+      output.style.display = "none";
+
+      const payload = {
+        f_expr: document.getElementById("f_expr").value,
+        a: document.getElementById("a_val").value,
+        b: document.getElementById("b_val").value,
+        n: document.getElementById("n_val").value,
+      };
+
+      let resp, data;
+      try {
+        resp = await fetch("/calculate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        data = await resp.json();
+      } catch (e) {
+        errBox.textContent = "Network error: " + e.message;
+        errBox.style.display = "block";
+        return;
+      }
+
+      if (!data.success) {
+        errBox.textContent = "Error: " + data.error;
+        errBox.style.display = "block";
+        return;
+      }
+
+      lastData = data.data;
+      const d = lastData;
+      const fmt = v => Number(v).toPrecision(10);
+
+      document.getElementById("res-val").textContent = fmt(d.result);
+      document.getElementById("res-h").textContent   = fmt(d.h);
+      document.getElementById("res-formula").innerHTML =
+        `<span>Formula:</span> I ≈ (h/3) × Σ(coeff × f(xᵢ))<br/>` +
+        `<span>h =</span> ${fmt(d.h)} &nbsp; <span>n =</span> ${d.n} &nbsp; <span>a =</span> ${d.a} &nbsp; <span>b =</span> ${d.b}<br/>` +
+        `<span>Weighted sum =</span> ${fmt(d.sum_all)} &nbsp; <span>h/3 =</span> ${fmt(d.h / 3)}<br/>` +
+        `<span>Result =</span> ${fmt(d.h / 3)} × ${fmt(d.sum_all)} = <strong style="color:#fff">${fmt(d.result)}</strong>`;
+
+      const tbody = document.getElementById("res-tbody");
+      tbody.innerHTML = "";
+      d.steps.forEach(s => {
+        const cls = s.coeff === 4 ? "oc4" : s.coeff === 2 ? "oc2" : "oc1";
+        tbody.insertAdjacentHTML("beforeend", `<tr>
+          <td>${s.i}</td>
+          <td>${Number(s.x).toFixed(8)}</td>
+          <td>${Number(s.fx).toFixed(8)}</td>
+          <td class="${cls}">${s.coeff}</td>
+          <td>${Number(s.weighted).toFixed(8)}</td>
+        </tr>`);
+      });
+
+      output.style.display = "block";
+      output.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function resetCalc() {
+      document.getElementById("f_expr").value = "sin(x)";
+      document.getElementById("a_val").value  = "0";
+      document.getElementById("b_val").value  = "3.14159265358979";
+      document.getElementById("n_val").value  = "10";
+      document.getElementById("output").style.display = "none";
+      document.getElementById("error-msg").style.display = "none";
+      lastData = null;
+    }
+
+    function exportCSV() {
+      if (!lastData) return;
+      const rows = [["i","x_i","f(x_i)","Coefficient","Weighted"]];
+      lastData.steps.forEach(s => rows.push([s.i, s.x, s.fx, s.coeff, s.weighted]));
+      rows.push(["","","","Sum", lastData.sum_all]);
+      rows.push(["","","","h/3", lastData.h/3]);
+      rows.push(["","","","Result", lastData.result]);
+      const csv = rows.map(r => r.join(",")).join("\n");
+      const a = document.createElement("a");
+      a.href = "data:text/csv," + encodeURIComponent(csv);
+      a.download = "simpsons_result.csv";
+      a.click();
+    }
+  </script>
+</body>
+</html>
