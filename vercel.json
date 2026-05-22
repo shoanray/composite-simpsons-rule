@@ -8,6 +8,11 @@
   ],
   "routes": [
     {
+      "src": "/calculate",
+      "dest": "app.py",
+      "methods": ["POST"]
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }
