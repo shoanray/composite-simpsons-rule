@@ -1,8 +1,3 @@
-"""
-Composite Simpson's 1/3 Rule – Flask Web Application
-PIT Project – Numerical Methods Online Calculator
-"""
-
 from flask import Flask, render_template, request, jsonify
 import math
 
@@ -107,4 +102,4 @@ def calculate():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
