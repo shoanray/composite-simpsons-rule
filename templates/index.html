@@ -995,9 +995,9 @@
       document.getElementById("res-h").textContent   = fmt(d.h);
       document.getElementById("res-formula").innerHTML =
         `<span>Formula:</span> I ≈ (h/3) × Σ(coeff × f(xᵢ))<br/>` +
-        `<span>h =</span> ${fmt(d.h)} &nbsp; <span>n =</span> ${d.n} &nbsp; <span>a =</span> ${d.a} &nbsp; <span>b =</span> ${d.b}<br/>` +
-        `<span>Weighted sum =</span> ${fmt(d.sum_all)} &nbsp; <span>h/3 =</span> ${fmt(d.h / 3)}<br/>` +
-        `<span>Result =</span> ${fmt(d.h / 3)} × ${fmt(d.sum_all)} = <strong style="color:#fff">${fmt(d.result)}</strong>`;
+        `<span>h =</span> ${fmt(d.h)} &nbsp; <span>n =</span> ${d.n} &nbsp; <span>a =</span> ${Number(d.a).toFixed(4)} &nbsp; <span>b =</span> ${Number(d.b).toFixed(4)}<br/>` +
+        `<span>Weighted sum =</span> ${Number(d.sum_all).toFixed(4)} &nbsp; <span>h/3 =</span> ${Number(d.h / 3).toFixed(4)}<br/>` +
+        `<span>Result =</span> ${Number(d.h / 3).toFixed(4)} × ${Number(d.sum_all).toFixed(4)} = <strong style="color:#fff">${fmt(d.result)}</strong>`;
  
       const tbody = document.getElementById("res-tbody");
       tbody.innerHTML = "";
@@ -1005,10 +1005,10 @@
         const cls = s.coeff === 4 ? "oc4" : s.coeff === 2 ? "oc2" : "oc1";
         tbody.insertAdjacentHTML("beforeend", `<tr>
           <td>${s.i}</td>
-          <td>${Number(s.x).toFixed(8)}</td>
-          <td>${Number(s.fx).toFixed(8)}</td>
+          <td>${Number(s.x).toFixed(4)}</td>
+          <td>${Number(s.fx).toFixed(4)}</td>
           <td class="${cls}">${s.coeff}</td>
-          <td>${Number(s.weighted).toFixed(8)}</td>
+          <td>${Number(s.weighted).toFixed(4)}</td>
         </tr>`);
       });
  
